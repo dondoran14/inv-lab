@@ -32,6 +32,7 @@
                                     <th>Valor adquirido</th>
                                     <th>Valor residual</th>
                                     <th>Vida util</th>
+                                    <th>Interes</th>
                                     <th>Depreciación mensual</th>
                                     <th>Depreciación anual</th>
                                     <th>Depreciación acumulada</th>
@@ -62,6 +63,7 @@
                                     <td>{{$detail->valor_adquirido}}</td>
                                     <td>{{$detail->valor_residual}}</td>
                                     <td>{{$detail->vida_util}}</td>
+                                    <td>{{$detail->interes}}</td>
                                     <td>{{$detail->depreciacion_mensual}}</td>
                                     <td>{{$detail->depreciacion_anual}}</td>
                                     <td>{{$detail->depreciacion_acumulada}}</td>
@@ -81,12 +83,29 @@
                                             <a onclick="return alert('Inventario Cerrado');" class="btn btn-info" disabled>Editar</a> |
                                         @endif                                              
                                         
-                                        <form action="{{ route('detalles.destroy', $detail->id) }}" method="post" class="d-inline">
-                                            @method('DELETE')
-                                            @csrf
-                                            
-                                            <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de eliminar este item?')">Eliminar</button>
-                                        </form>
+                                        @if ($detail->estado === "abierto")
+                                            <form action="{{ route('detalles.destroy', $detail->id) }}" method="post" class="d-inline">
+                                                @method('DELETE')
+                                                @csrf
+                                                
+                                                <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de eliminar este item?')">Eliminar</button>
+                                            </form> |
+                                        @else
+                                            <a onclick="return alert('Inventario Cerrado');" class="btn btn-danger" disabled>Eliminar</a> |
+                                        @endif 
+                                        
+                                        
+                                        @if ($detail->estado === "abierto")
+                                            @if ($detail->interes > 0)
+                                                <a href={{ route('detalles.depr_m', [$detail->interes,$detail->vida_util,$detail->valor_adquirido,$detail->nombre_activo]) }} class="btn btn-primary">Ver depreciación mensual</a> |
+                                            @else
+                                                <a onclick="return alert('¡El campo interes es menor o igual a cero!');" class="btn btn-primary" disabled>Ver depreciación mensual</a> |
+                                            @endif
+                                        @else
+                                            <a onclick="return alert('Inventario Cerrado');" class="btn btn-primary" disabled>Ver depreciación mensual</a> |
+                                        @endif  
+
+                                        
                                     </td>
                                 </tr>
                             @endforeach
@@ -118,58 +137,58 @@
     <script src="https://cdn.datatables.net/buttons/1.6.2/js/buttons.print.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/1.6.2/js/buttons.colVis.min.js"></script>
 
-<script type="text/javascript">
-    var table = $('#tabla').DataTable( {
-        scrollY: "300px",
-        scrollX: true,
-        scrollCollapse: true,
-        paging: false,
-        ordering: true,
-        info: true,
-        pagingType: "full_numbers",
-        searching: true,
-        pageLength: 10,
-        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
-        dom: 'Blfrtip',
-        language: {
-            paginate: {
-                first: "Primero",
-                last: "Ultimo",
-                previous: "Anterior",
-                next: "Siguiente",
+    <script type="text/javascript">
+        var table = $('#tabla').DataTable( {
+            scrollY: "300px",
+            scrollX: true,
+            scrollCollapse: true,
+            paging: false,
+            ordering: true,
+            info: true,
+            pagingType: "full_numbers",
+            searching: true,
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            dom: 'Blfrtip',
+            language: {
+                paginate: {
+                    first: "Primero",
+                    last: "Ultimo",
+                    previous: "Anterior",
+                    next: "Siguiente",
+                },
+                info: "Mostrar Entradas de _START_ a _TOTAL_",
+                infoEmpty: "Total de Entradas 0",
+                infoFiltered: "Filtrado de _MAX_ entradas totales",
+                lengthMenu: "Mostrar _MENU_ Entradas",
+                search: "Filtrar"
             },
-            info: "Mostrar Entradas de _START_ a _TOTAL_",
-            infoEmpty: "Total de Entradas 0",
-            infoFiltered: "Filtrado de _MAX_ entradas totales",
-            lengthMenu: "Mostrar _MENU_ Entradas",
-            search: "Filtrar"
-        },
-        buttons: [
-            {
-                extend: 'excel',
-                className: 'btn btn-default rounded-0',
-                text: '<i class="far fa-file-excel"></i> Exportar a excel',
-                exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            buttons: [
+                {
+                    extend: 'excel',
+                    className: 'btn btn-default rounded-0',
+                    text: '<i class="far fa-file-excel"></i> Exportar a excel',
+                    exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+                    }
                 }
+            ],
+            columnDefs: [
+                { orderable: false, targets: 0 },
+                { orderable: false, targets: -1 }
+            ],
+            ordering: [[ 1, 'asc' ]],
+            colReorder: {
+                fixedColumnsLeft: 2,
+                fixedColumnsRight: 1
             }
-        ],
-        columnDefs: [
-            { orderable: false, targets: 0 },
-            { orderable: false, targets: -1 }
-        ],
-        ordering: [[ 1, 'asc' ]],
-        colReorder: {
-            fixedColumnsLeft: 2,
-            fixedColumnsRight: 1
-        }
-    });
+        });
 
-    new $.fn.dataTable.FixedColumns( table, {
-        leftColumns: 2,
-        rightColumns: 1
-    } );
-</script>
+        new $.fn.dataTable.FixedColumns( table, {
+            leftColumns: 2,
+            rightColumns: 1
+        } );
+    </script>
 
 @endsection
 

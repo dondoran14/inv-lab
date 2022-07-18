@@ -33,6 +33,7 @@ Route::resource('tipo_activos', TblTipoActivoController::class)
 ->middleware('auth');
 
 Route::get('/list_inv', [TblInventarioDetalleController::class, 'list_inv'])->name('detalles.list_inv');
+Route::get('detalles/depr_m/{interes}/{vida_util}/{importe}/{equipo}', [TblInventarioDetalleController::class, 'depr_m'])->name('detalles.depr_m');
 
 // Seguridad
 Route::resource('auth', AuthController::class)

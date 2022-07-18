@@ -33,6 +33,42 @@ class TblInventarioDetalleController extends Controller
         return view('inventarios.detalles.inventarios');
     }
 
+    public function depr_m($interes,$vida_util,$valor_adquirido,$equipo)
+    {
+        $intCapital = $valor_adquirido;
+        $intInteres = $interes;
+        $intPlazo = $vida_util*12;
+        $tablaAmortizacion = array();
+        // dd($interes,$vida_util,$valor_adquirido);
+        // cuota = Capital * interes / ( 1 - ( 1 + interes) ^ -plazo)
+        // interesPagar = saldo Capital * interes
+        // abono a capital = cuota - interesPagar
+        // capitalSaldo =  capital - capital-saldo - abono a capital
+        $intInteresNominal = $intInteres / 12 / 100;
+        $capitalSaldo = $intCapital;
+        $cuotaItem = array();
+        $tablaAmortizacion =array();
+        $fltCuota = round(($intCapital * $intInteresNominal) / ( 1 - ((1+ $intInteresNominal)**(-1 * $intPlazo))),4);
+        for ( $i = 1; $i <= $intPlazo; $i++) {
+            // $cuotaItem = array();
+            $cuotaItem["periodo"] = $i;
+            $cuotaItem["cuota"] = $fltCuota;
+            $cuotaItem["interes"] = round($capitalSaldo * $intInteresNominal, 4);
+            $cuotaItem["abono"] = $cuotaItem["cuota"] - $cuotaItem["interes"];
+            if ($i == $intPlazo){
+                $cuotaItem["cuota"] = $capitalSaldo + $cuotaItem["interes"];
+                $cuotaItem["abono"] = $capitalSaldo;
+                $cuotaItem["saldo"] = 0;
+            }else{
+                $capitalSaldo -= $cuotaItem["abono"];
+                $cuotaItem["saldo"] = $capitalSaldo;
+            }
+
+            $tablaAmortizacion[] = $cuotaItem;
+        }
+        // dd($tablaAmortizacion);
+        return view('inventarios.detalles.depr_m',compact('tablaAmortizacion','equipo'));
+    }
     /**
      * Show the form for creating a new resource.
      *
@@ -53,9 +89,10 @@ class TblInventarioDetalleController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nombre_activo' => 'required|unique:tbl_inventario_detalles|max:75'
+            'nombre_activo' => 'required|max:75',
+            'interes' => 'required'
         ]);
-
+        
         $detalle= Tbl_inventario_detalle::create($request->all());
         $id=$request['id_inventario'];
         Session::flash('mensaje','¡Registro creado con exito!');
@@ -96,7 +133,7 @@ class TblInventarioDetalleController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nombre_activo' => 'required|unique:tbl_inventario_detalles|max:75'
+            'nombre_activo' => 'required|max:75'
         ]);
  
         $detalle = Tbl_inventario_detalle::find($id);
